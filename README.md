@@ -65,7 +65,7 @@ Prompts live in **`infrastructure/llm/prompts.py`**. **`LangChainProvider`** use
 | **Domain** | Entities and repository **interfaces** under **`domain/`**; infrastructure implements those interfaces (`exercise_repository`, etc.). |
 | **JWT** | **Decode-only** — no user table sync; aligns with **`domain/entities/token_claims.UserClaims`**. |
 | **LLM** | **`LLMProviderInterface`** (**`domain/interfaces/llm_provider.py`**) implemented by **`infrastructure.llm.langchain_provider.LangChainProvider`**. Extend by installing **`langchain-<provider>`** and setting **`LLM_*`** env vars (see **`.env_template`**). |
-| **Persistence** | Async SQLAlchemy + **Azure SQL/SQL Server** via **`create_async_engine`** (**`DATABASE_URL`**). **`LongAsMax=Yes`** is appended automatically for ODBC compatibility. |
+| **Persistence** | Async SQLAlchemy + **Azure SQL/SQL Server** via **`create_async_engine`** (**`ENGLISH_DATABASE_URL`**). **`LongAsMax=Yes`** is appended automatically for ODBC compatibility. |
 | **Observability** | **`azure-monitor-opentelemetry`**, custom Azure handlers/metrics decorators under **`infrastructure/observability/`**. |
 
 ---
@@ -88,8 +88,8 @@ Critical keys are documented inline in **`core/settings.py`**. Highlights:
 
 | Variable | Purpose |
 | --- | --- |
-| **`DATABASE_URL`** | Async **`mssql+aioodbc://...`** for the app |
-| **`DATABASE_MIGRATION_URL`** | Sync **`mssql+pyodbc://...`** for Alembic |
+| **`ENGLISH_DATABASE_URL`** | Async **`mssql+aioodbc://...`** for the app |
+| **`ENGLISH_DATABASE_MIGRATION_URL`** | Sync **`mssql+pyodbc://...`** for Alembic |
 | **`SECRET_TOKEN_KEY`**, **`AUTH_ALGORITHM`** | Must match Identity for JWT verification |
 | **`SERVICE_ID`**, **`SERVICE_NAME`** | Must match Identity’s service registry and JWT role keys |
 | **`LLM_*`** | Provider, API key, model, temperature |
@@ -102,7 +102,7 @@ For Azure-hosted apps, **`SQLCONNSTR_*`**-style overrides are supported (**`mode
 
 1. Create the target database on SQL Server/Azure SQL (e.g. **`PrepositionsDB`**).
 
-2. Point **`DATABASE_MIGRATION_URL`** (Alembic) and **`DATABASE_URL`** (runtime) per **`.env_template`**.
+2. Point **`ENGLISH_DATABASE_MIGRATION_URL`** (Alembic) and **`ENGLISH_DATABASE_URL`** (runtime) per **`.env_template`**.
 
 3. From repo root:
 
@@ -110,7 +110,7 @@ For Azure-hosted apps, **`SQLCONNSTR_*`**-style overrides are supported (**`mode
    alembic upgrade head
    ```
 
-Alembic uses **`DATABASE_MIGRATION_URL`** (**`alembic/env.py`**), models under **`infrastructure/databases/models.py`**, and **`Base.metadata`** for autogenerate.
+Alembic uses **`ENGLISH_DATABASE_MIGRATION_URL`** through **`alembic/env.py`**, models under **`infrastructure/databases/models.py`**, and **`Base.metadata`** for autogenerate.
 
 ---
 

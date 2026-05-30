@@ -1,4 +1,4 @@
-from pydantic import Field, field_validator, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from datetime import timedelta
 from typing import Any, Optional
@@ -30,36 +30,42 @@ class Settings(BaseSettings):
     )
     
     # Database Configuration
-    # Standard env: DATABASE_URL / DATABASE_MIGRATION_URL.
+    # Standard env: ENGLISH_DATABASE_URL / ENGLISH_DATABASE_MIGRATION_URL.
     # Azure Connection strings are exposed as SQLCONNSTR_*, SQLAZURECONNSTR_*, CUSTOMCONNSTR_*.
     database_url: str = Field(
+        validation_alias=AliasChoices("ENGLISH_DATABASE_URL"),
         description="Database connection URL for application runtime (async driver)",
     )
     database_migration_url: str = Field(
+        validation_alias=AliasChoices("ENGLISH_DATABASE_MIGRATION_URL"),
         description="Database connection URL for migrations (sync driver)",
     )
     
     @model_validator(mode="before")
     @classmethod
     def read_azure_connection_strings(cls, data: Any) -> Any:
-        """Inject database URLs from Azure App Service connection string env vars when standard names are missing."""
+        """Inject database URLs from Azure App Service connection string env vars when app settings are missing."""
         if not isinstance(data, dict):
             return data
         out = dict(data)
         prefixes = ("SQLCONNSTR_", "SQLAZURECONNSTR_", "CUSTOMCONNSTR_")
-        for field_name, env_bases in (
-            ("database_url", ("DATABASE_URL", "DatabaseUrl")),
-            ("database_migration_url", ("DATABASE_MIGRATION_URL", "DatabaseMigrationUrl")),
+        for field_name, alias, env_bases in (
+            ("database_url", "ENGLISH_DATABASE_URL", ("ENGLISH_DATABASE_URL", "EnglishDatabaseUrl")),
+            (
+                "database_migration_url",
+                "ENGLISH_DATABASE_MIGRATION_URL",
+                ("ENGLISH_DATABASE_MIGRATION_URL", "EnglishDatabaseMigrationUrl"),
+            ),
         ):
-            if out.get(field_name):
+            if out.get(field_name) or out.get(alias):
                 continue
             for prefix in prefixes:
                 for base in env_bases:
                     val = os.environ.get(prefix + base)
                     if val:
-                        out[field_name] = val
+                        out[alias] = val
                         break
-                if out.get(field_name):
+                if out.get(field_name) or out.get(alias):
                     break
         return out
     

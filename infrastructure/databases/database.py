@@ -9,27 +9,27 @@ from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
 
-DATABASE_URL = app_settings.database_url
-if not DATABASE_URL:
+ENGLISH_DATABASE_URL = app_settings.database_url
+if not ENGLISH_DATABASE_URL:
     raise RuntimeError(
-        "DATABASE_URL environment variable is required")
+        "ENGLISH_DATABASE_URL environment variable is required")
 
-DATABASE_MIGRATION_URL = app_settings.database_migration_url
-if not DATABASE_MIGRATION_URL:
+ENGLISH_DATABASE_MIGRATION_URL = app_settings.database_migration_url
+if not ENGLISH_DATABASE_MIGRATION_URL:
     raise RuntimeError(
-        "DATABASE_MIGRATION_URL environment variable is required")
+        "ENGLISH_DATABASE_MIGRATION_URL environment variable is required")
 
 
-parsed = urlparse(DATABASE_URL)
+parsed = urlparse(ENGLISH_DATABASE_URL)
 query_params = parse_qs(parsed.query)
 if 'LongAsMax' not in query_params:
     query_params['LongAsMax'] = ["Yes"]
 
 parsed = parsed._replace(query=urlencode(query_params, doseq=True))
-DATABASE_URL = urlunparse(parsed)
+ENGLISH_DATABASE_URL = urlunparse(parsed)
 
 engine = create_async_engine(
-    DATABASE_URL,
+    ENGLISH_DATABASE_URL,
     pool_pre_ping=True,
     connect_args={
         "timeout": 30,

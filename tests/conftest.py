@@ -10,8 +10,8 @@ _DEFAULTS = {
     "SECRET_TOKEN_KEY": "x" * 40,
     "AUTH_ALGORITHM": "HS256",
     "TOKEN_TIME_DELTA_IN_MINUTES": "60",
-    "DATABASE_URL": "mssql+pyodbc://user:pass@localhost/testdb",
-    "DATABASE_MIGRATION_URL": "mssql+pyodbc://user:pass@localhost/testdbadm",
+    "ENGLISH_DATABASE_URL": "mssql+pyodbc://user:pass@localhost/testdb",
+    "ENGLISH_DATABASE_MIGRATION_URL": "mssql+pyodbc://user:pass@localhost/testdbadm",
     "TOKEN_URL": "/token",
     "SERVICE_NAME": "english-service",
 }

@@ -1,8 +1,8 @@
 # LanguageApp English API - production image for Ubuntu Server / docker-compose reuse.
 # Build: docker build -t languageapp-english:latest .
-# Run: pass DATABASE_URL, SECRET_TOKEN_KEY, AUTH_ALGORITHM, TOKEN_TIME_DELTA_IN_MINUTES,
+# Run: pass ENGLISH_DATABASE_URL, SECRET_TOKEN_KEY, AUTH_ALGORITHM, TOKEN_TIME_DELTA_IN_MINUTES,
 #      TOKEN_URL, SERVICE_ID, SERVICE_NAME (and optional Azure Monitor) via env or docker-compose.
-# Listens on port 80 by default (Azure default). Required env: DATABASE_URL, DATABASE_MIGRATION_URL,
+# Listens on port 80 by default (Azure default). Required env: ENGLISH_DATABASE_URL, ENGLISH_DATABASE_MIGRATION_URL,
 # SECRET_TOKEN_KEY, AUTH_ALGORITHM, TOKEN_TIME_DELTA_IN_MINUTES, TOKEN_URL, SERVICE_ID, SERVICE_NAME.
 
 FROM python:3.12-slim

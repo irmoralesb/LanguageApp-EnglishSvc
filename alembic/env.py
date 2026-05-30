@@ -24,9 +24,9 @@ if config.config_file_name is not None:
 # Import your models AFTER setting up the path
 try:
     from infrastructure.databases.models import Base
-    from infrastructure.databases.database import DATABASE_MIGRATION_URL
+    from infrastructure.databases.database import ENGLISH_DATABASE_MIGRATION_URL
 
-    database_url = DATABASE_MIGRATION_URL
+    database_url = ENGLISH_DATABASE_MIGRATION_URL
     
     # Add LongAsMax parameter if not present
     parsed = urlparse(database_url)
