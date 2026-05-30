@@ -1,13 +1,10 @@
-# Build and push Docker image to DockerHub when a tag is pushed.
-# Environment is determined by which branch contains the tag's commit:
-# - main  -> Prod image (tag + optional 'latest')
-# - test  -> Test image (tag only)
-# - both  -> Prod (main takes precedence)
-# - neither -> job is skipped
+# Build and push the English Service image to Docker Hub when a SemVer tag is pushed.
+# Environment is derived from the branch that contains the tag's commit:
+#   - main  -> Prod image (tag + 'latest')
+#   - test  -> Test image (tag only)
+#   - neither -> skipped
 #
 # Required GitHub secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN
-# Set DOCKER_IMAGE_REPO below (e.g. languageapp-english) to match your Docker Hub repo name.
-
 name: Build and push Docker image
 
 on:
@@ -16,7 +13,7 @@ on:
       - '*'
 
 env:
-  DOCKER_IMAGE_REPO: languageapp-english  # Docker Hub repository name (without username)
+  DOCKER_IMAGE_REPO: languageapp-english  # Docker Hub repository name (without the username)
 
 jobs:
   resolve:

@@ -1,0 +1,73 @@
+# Deploy the freshly published English image to the matching Azure Web App for Containers.
+# Runs automatically after "Build and push Docker image" completes successfully.
+#
+# Target Web App naming (created by LanguageApp-Scripts/Deployment/Azure):
+#   <AZURE_WEBAPP_BASENAME>-<environment>   e.g. languageapp-english-prod
+#   resource group: <AZURE_RG_PREFIX>-<environment>   e.g. rg-languageapp-prod
+#
+# Required GitHub secrets: AZURE_CREDENTIALS (service principal JSON), DOCKERHUB_USERNAME
+name: Deploy to Azure
+
+on:
+  workflow_run:
+    workflows: ["Build and push Docker image"]
+    types:
+      - completed
+
+env:
+  DOCKER_IMAGE_REPO: languageapp-english
+  AZURE_WEBAPP_BASENAME: languageapp-english
+  AZURE_RG_PREFIX: rg-languageapp
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Fetch main and test branches
+        run: git fetch origin main test 2>/dev/null || true
+
+      - name: Resolve environment and tag
+        id: resolve
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          TAG="${{ github.event.workflow_run.head_branch }}"   # tag name for a tag push
+          BRANCHES=$(git branch -r --contains "$SHA" 2>/dev/null || true)
+          if echo "$BRANCHES" | grep -q 'origin/main'; then
+            echo "environment=prod" >> "$GITHUB_OUTPUT"
+          elif echo "$BRANCHES" | grep -q 'origin/test'; then
+            echo "environment=test" >> "$GITHUB_OUTPUT"
+          else
+            echo "environment=skip" >> "$GITHUB_OUTPUT"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Azure login
+        if: steps.resolve.outputs.environment != 'skip'
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Update container image and restart
+        if: steps.resolve.outputs.environment != 'skip'
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            ENV="${{ steps.resolve.outputs.environment }}"
+            TAG="${{ steps.resolve.outputs.tag }}"
+            APP="${{ env.AZURE_WEBAPP_BASENAME }}-${ENV}"
+            RG="${{ env.AZURE_RG_PREFIX }}-${ENV}"
+            IMAGE="docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_REPO }}:${TAG}"
+            echo "Deploying ${IMAGE} to ${APP} (${RG})"
+            az webapp config container set \
+              --name "$APP" \
+              --resource-group "$RG" \
+              --container-image-name "$IMAGE"
+            az webapp restart --name "$APP" --resource-group "$RG"

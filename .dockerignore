@@ -6,6 +6,7 @@
 # Version control and editor
 .git
 .gitignore
+.github
 .vscode
 .cursorignore
 .cursorindexingignore
@@ -29,11 +30,12 @@ build
 venv
 env
 ENV
+.pixi
+__pypackages__
 
 # Tests and dev docs (not needed in production image)
 test_*.py
 TODO.md
-TEMPO_IMPLEMENTATION.md
 *.md
 !README.md
 *.log
@@ -41,4 +43,3 @@ TEMPO_IMPLEMENTATION.md
 # Plan and misc
 .cursor
 plans
-project_requirements
