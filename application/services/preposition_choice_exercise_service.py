@@ -16,7 +16,7 @@ from domain.interfaces.preposition_choice_exercise_repository import (
     PrepositionChoiceExerciseRepositoryInterface,
 )
 from domain.interfaces.user_profile_repository import UserProfileRepositoryInterface
-from domain.preposition_choice_pairs import pair_key, pairs_for_terms
+from domain.preposition_choice_pairs import SIMILAR_PREPOSITION_PAIRS, pair_key
 from application.services.prompt_token_service import (
     PromptTokenService,
     InvalidPromptToken,
@@ -45,26 +45,41 @@ class PrepositionChoiceExerciseService:
         self.llm = llm_provider
         self.prompt_token_svc = prompt_token_svc
 
-    async def _available_terms_for_user(self, user_id: UUID) -> set[str]:
-        selections = await self.user_profile_repo.get_practice_term_selections(user_id)
-        if selections:
-            terms: set[str] = set()
-            for sel in selections:
-                pt = await self.practice_term_repo.get_by_id(sel.practice_term_id)
-                if pt is not None:
-                    terms.add(pt.term.strip().lower())
-            return terms
+    async def _catalog_terms(self) -> set[str]:
         catalog = await self.practice_term_repo.get_catalog(skip=0, limit=500)
         return {pt.term.strip().lower() for pt in catalog}
 
-    async def _pick_pair(
-        self, user_id: UUID, available_terms: set[str],
-    ) -> tuple[str, str]:
-        eligible = pairs_for_terms(available_terms)
+    async def _selected_terms(self, user_id: UUID) -> set[str]:
+        selections = await self.user_profile_repo.get_practice_term_selections(user_id)
+        terms: set[str] = set()
+        for sel in selections:
+            pt = await self.practice_term_repo.get_by_id(sel.practice_term_id)
+            if pt is not None:
+                terms.add(pt.term.strip().lower())
+        return terms
+
+    async def _eligible_pairs(
+        self, user_id: UUID,
+    ) -> list[tuple[str, str]]:
+        catalog_terms = await self._catalog_terms()
+        selected_terms = await self._selected_terms(user_id)
+        focus_terms = selected_terms if selected_terms else catalog_terms
+
+        eligible = [
+            pair
+            for pair in SIMILAR_PREPOSITION_PAIRS
+            if pair[0] in catalog_terms
+            and pair[1] in catalog_terms
+            and (pair[0] in focus_terms or pair[1] in focus_terms)
+        ]
+        return eligible
+
+    async def _pick_pair(self, user_id: UUID) -> tuple[str, str]:
+        eligible = await self._eligible_pairs(user_id)
         if not eligible:
             raise ExerciseGenerationError(
-                "Select more prepositions that form a confusable pair "
-                "(for example both 'in' and 'into').",
+                "Select at least one preposition that belongs to a confusable pair "
+                "(for example 'in' or 'into').",
             )
 
         stats = await self.exercise_repo.get_pair_stats_by_user(user_id)
@@ -91,8 +106,7 @@ class PrepositionChoiceExerciseService:
         if native_lang is None:
             raise ExerciseGenerationError("Native language not found in catalog.")
 
-        available_terms = await self._available_terms_for_user(user_id)
-        option_a, option_b = await self._pick_pair(user_id, available_terms)
+        option_a, option_b = await self._pick_pair(user_id)
 
         prompt = await self.llm.generate_preposition_choice_exercise(
             option_a=option_a,
