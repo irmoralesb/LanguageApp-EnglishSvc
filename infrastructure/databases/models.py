@@ -93,6 +93,9 @@ class UserProfileDataModel(Base):
     phrasal_verb_selections = relationship(
         "UserPhrasalVerbSelectionDataModel", back_populates="profile", lazy="selectin"
     )
+    english_expression_selections = relationship(
+        "UserEnglishExpressionSelectionDataModel", back_populates="profile", lazy="selectin"
+    )
 
 
 class UserLearningLanguageDataModel(Base):
@@ -259,6 +262,148 @@ class MultiplePrepositionsExerciseResultTermDataModel(Base):
 
     result = relationship("MultiplePrepositionsExerciseResultDataModel", back_populates="terms")
     practice_term = relationship("PracticeTermDataModel", lazy="joined")
+
+
+class EnglishExpressionDataModel(Base):
+    __tablename__ = "english_expressions"
+    __table_args__ = (
+        UniqueConstraint("text", "expression_type", "created_by_user_id", name="uq_expression_type_user"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), default=uuid.uuid4, primary_key=True
+    )
+    text: Mapped[str] = mapped_column(String(200), nullable=False)
+    expression_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    definition: Mapped[str] = mapped_column(String(500), nullable=False)
+    example_sentence: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    register: Mapped[str] = mapped_column(String(20), nullable=False, default="neutral")
+    is_catalog: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), nullable=True
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DATETIME2(precision=6), server_default=func.sysutcdatetime(), nullable=False
+    )
+
+
+class UserEnglishExpressionSelectionDataModel(Base):
+    __tablename__ = "user_english_expression_selections"
+    __table_args__ = (
+        UniqueConstraint("user_id", "english_expression_id", name="uq_user_english_expression"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), default=uuid.uuid4, primary_key=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), ForeignKey("user_profiles.user_id"), nullable=False
+    )
+    english_expression_id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), ForeignKey("english_expressions.id"), nullable=False
+    )
+    added_at: Mapped[datetime.datetime] = mapped_column(
+        DATETIME2(precision=6), server_default=func.sysutcdatetime(), nullable=False
+    )
+
+    profile = relationship("UserProfileDataModel", back_populates="english_expression_selections")
+    english_expression = relationship("EnglishExpressionDataModel", lazy="joined")
+
+
+class ConfusableWordExerciseResultDataModel(Base):
+    __tablename__ = "confusable_word_exercise_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), default=uuid.uuid4, primary_key=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), nullable=False, index=True
+    )
+    option_a: Mapped[str] = mapped_column(String(50), nullable=False)
+    option_b: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_language_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    scenario_native: Mapped[str] = mapped_column(Text, nullable=False)
+    sentence_with_blank: Mapped[str] = mapped_column(Text, nullable=False)
+    sentence_complete: Mapped[str] = mapped_column(Text, nullable=False)
+    correct_word: Mapped[str] = mapped_column(String(50), nullable=False)
+    user_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    feedback: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DATETIME2(precision=6), server_default=func.sysutcdatetime(), nullable=False
+    )
+
+
+class NaturalRewriteExerciseResultDataModel(Base):
+    __tablename__ = "natural_rewrite_exercise_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), default=uuid.uuid4, primary_key=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), nullable=False, index=True
+    )
+    target_language_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    scenario_native: Mapped[str] = mapped_column(Text, nullable=False)
+    stiff_sentence: Mapped[str] = mapped_column(Text, nullable=False)
+    user_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    feedback: Mapped[str] = mapped_column(Text, nullable=False)
+    model_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DATETIME2(precision=6), server_default=func.sysutcdatetime(), nullable=False
+    )
+
+
+class RegisterSwitchExerciseResultDataModel(Base):
+    __tablename__ = "register_switch_exercise_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), default=uuid.uuid4, primary_key=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), nullable=False, index=True
+    )
+    target_language_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    scenario_native: Mapped[str] = mapped_column(Text, nullable=False)
+    source_sentence: Mapped[str] = mapped_column(Text, nullable=False)
+    source_register: Mapped[str] = mapped_column(String(20), nullable=False)
+    target_register: Mapped[str] = mapped_column(String(20), nullable=False)
+    slang_level: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    user_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    feedback: Mapped[str] = mapped_column(Text, nullable=False)
+    model_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DATETIME2(precision=6), server_default=func.sysutcdatetime(), nullable=False
+    )
+
+
+class EnglishExpressionExerciseResultDataModel(Base):
+    __tablename__ = "english_expression_exercise_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), default=uuid.uuid4, primary_key=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), nullable=False, index=True
+    )
+    english_expression_id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), ForeignKey("english_expressions.id"), nullable=False
+    )
+    exercise_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_language_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    scenario_native: Mapped[str] = mapped_column(Text, nullable=False)
+    prompt_native: Mapped[str] = mapped_column(Text, nullable=False)
+    expected_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    user_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    feedback: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DATETIME2(precision=6), server_default=func.sysutcdatetime(), nullable=False
+    )
+
+    english_expression = relationship("EnglishExpressionDataModel", lazy="joined")
 
 
 class PrepositionChoiceExerciseResultDataModel(Base):

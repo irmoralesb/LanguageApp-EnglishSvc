@@ -13,6 +13,19 @@ from application.services.multiple_prepositions_exercise_service import (
 from application.services.preposition_choice_exercise_service import (
     PrepositionChoiceExerciseService,
 )
+from application.services.confusable_word_exercise_service import (
+    ConfusableWordExerciseService,
+)
+from application.services.natural_rewrite_exercise_service import (
+    NaturalRewriteExerciseService,
+)
+from application.services.register_switch_exercise_service import (
+    RegisterSwitchExerciseService,
+)
+from application.services.english_expression_catalog_service import (
+    EnglishExpressionCatalogService,
+)
+from application.services.expression_exercise_service import ExpressionExerciseService
 from application.services.phrasal_verb_catalog_service import PhrasalVerbCatalogService
 from application.services.phrasal_verb_exercise_service import PhrasalVerbExerciseService
 from application.services.practice_term_catalog_service import PracticeTermCatalogService
@@ -39,6 +52,21 @@ from infrastructure.repositories.multiple_prepositions_exercise_repository impor
 )
 from infrastructure.repositories.preposition_choice_exercise_repository import (
     PrepositionChoiceExerciseRepository,
+)
+from infrastructure.repositories.confusable_word_exercise_repository import (
+    ConfusableWordExerciseRepository,
+)
+from infrastructure.repositories.natural_rewrite_exercise_repository import (
+    NaturalRewriteExerciseRepository,
+)
+from infrastructure.repositories.register_switch_exercise_repository import (
+    RegisterSwitchExerciseRepository,
+)
+from infrastructure.repositories.english_expression_repository import (
+    EnglishExpressionRepository,
+)
+from infrastructure.repositories.expression_exercise_repository import (
+    ExpressionExerciseRepository,
 )
 from infrastructure.repositories.phrasal_verb_exercise_repository import (
     PhrasalVerbExerciseRepository,
@@ -79,6 +107,36 @@ def get_preposition_choice_exercise_repository(
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> PrepositionChoiceExerciseRepository:
     return PrepositionChoiceExerciseRepository(db)
+
+
+def get_confusable_word_exercise_repository(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ConfusableWordExerciseRepository:
+    return ConfusableWordExerciseRepository(db)
+
+
+def get_natural_rewrite_exercise_repository(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> NaturalRewriteExerciseRepository:
+    return NaturalRewriteExerciseRepository(db)
+
+
+def get_register_switch_exercise_repository(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> RegisterSwitchExerciseRepository:
+    return RegisterSwitchExerciseRepository(db)
+
+
+def get_english_expression_repository(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> EnglishExpressionRepository:
+    return EnglishExpressionRepository(db)
+
+
+def get_expression_exercise_repository(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ExpressionExerciseRepository:
+    return ExpressionExerciseRepository(db)
 
 
 def get_phrasal_verb_repository(db: Annotated[AsyncSession, Depends(get_db_session)]) -> PhrasalVerbRepository:
@@ -166,6 +224,81 @@ def get_preposition_choice_exercise_service(
 ) -> PrepositionChoiceExerciseService:
     return PrepositionChoiceExerciseService(
         exercise_repo, term_repo, profile_repo, language_repo, llm, prompt_token_svc,
+    )
+
+
+def get_confusable_word_exercise_service(
+    exercise_repo: Annotated[
+        ConfusableWordExerciseRepository,
+        Depends(get_confusable_word_exercise_repository),
+    ],
+    term_repo: Annotated[PracticeTermRepository, Depends(get_practice_term_repository)],
+    profile_repo: Annotated[UserProfileRepository, Depends(get_user_profile_repository)],
+    language_repo: Annotated[LanguageRepository, Depends(get_language_repository)],
+    llm: Annotated[LLMProviderInterface, Depends(get_llm_provider)],
+    prompt_token_svc: Annotated[PromptTokenService, Depends(get_prompt_token_service)],
+) -> ConfusableWordExerciseService:
+    return ConfusableWordExerciseService(
+        exercise_repo, term_repo, profile_repo, language_repo, llm, prompt_token_svc,
+    )
+
+
+def get_natural_rewrite_exercise_service(
+    exercise_repo: Annotated[
+        NaturalRewriteExerciseRepository,
+        Depends(get_natural_rewrite_exercise_repository),
+    ],
+    profile_repo: Annotated[UserProfileRepository, Depends(get_user_profile_repository)],
+    language_repo: Annotated[LanguageRepository, Depends(get_language_repository)],
+    llm: Annotated[LLMProviderInterface, Depends(get_llm_provider)],
+    prompt_token_svc: Annotated[PromptTokenService, Depends(get_prompt_token_service)],
+) -> NaturalRewriteExerciseService:
+    return NaturalRewriteExerciseService(
+        exercise_repo, profile_repo, language_repo, llm, prompt_token_svc,
+    )
+
+
+def get_register_switch_exercise_service(
+    exercise_repo: Annotated[
+        RegisterSwitchExerciseRepository,
+        Depends(get_register_switch_exercise_repository),
+    ],
+    profile_repo: Annotated[UserProfileRepository, Depends(get_user_profile_repository)],
+    language_repo: Annotated[LanguageRepository, Depends(get_language_repository)],
+    llm: Annotated[LLMProviderInterface, Depends(get_llm_provider)],
+    prompt_token_svc: Annotated[PromptTokenService, Depends(get_prompt_token_service)],
+) -> RegisterSwitchExerciseService:
+    return RegisterSwitchExerciseService(
+        exercise_repo, profile_repo, language_repo, llm, prompt_token_svc,
+    )
+
+
+def get_english_expression_catalog_service(
+    repo: Annotated[EnglishExpressionRepository, Depends(get_english_expression_repository)],
+) -> EnglishExpressionCatalogService:
+    return EnglishExpressionCatalogService(repo)
+
+
+def get_expression_exercise_service(
+    exercise_repo: Annotated[
+        ExpressionExerciseRepository,
+        Depends(get_expression_exercise_repository),
+    ],
+    expression_repo: Annotated[
+        EnglishExpressionRepository, Depends(get_english_expression_repository),
+    ],
+    profile_repo: Annotated[UserProfileRepository, Depends(get_user_profile_repository)],
+    language_repo: Annotated[LanguageRepository, Depends(get_language_repository)],
+    llm: Annotated[LLMProviderInterface, Depends(get_llm_provider)],
+    prompt_token_svc: Annotated[PromptTokenService, Depends(get_prompt_token_service)],
+) -> ExpressionExerciseService:
+    return ExpressionExerciseService(
+        exercise_repo,
+        expression_repo,
+        profile_repo,
+        language_repo,
+        llm,
+        prompt_token_svc,
     )
 
 
@@ -260,6 +393,26 @@ MultiplePrepositionsExerciseSvcDep = Annotated[
 PrepositionChoiceExerciseSvcDep = Annotated[
     PrepositionChoiceExerciseService,
     Depends(get_preposition_choice_exercise_service),
+]
+ConfusableWordExerciseSvcDep = Annotated[
+    ConfusableWordExerciseService,
+    Depends(get_confusable_word_exercise_service),
+]
+NaturalRewriteExerciseSvcDep = Annotated[
+    NaturalRewriteExerciseService,
+    Depends(get_natural_rewrite_exercise_service),
+]
+RegisterSwitchExerciseSvcDep = Annotated[
+    RegisterSwitchExerciseService,
+    Depends(get_register_switch_exercise_service),
+]
+EnglishExpressionSvcDep = Annotated[
+    EnglishExpressionCatalogService,
+    Depends(get_english_expression_catalog_service),
+]
+ExpressionExerciseSvcDep = Annotated[
+    ExpressionExerciseService,
+    Depends(get_expression_exercise_service),
 ]
 PhrasalVerbSvcDep = Annotated[PhrasalVerbCatalogService, Depends(get_phrasal_verb_catalog_service)]
 PhrasalVerbExerciseSvcDep = Annotated[

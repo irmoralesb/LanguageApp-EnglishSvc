@@ -23,6 +23,7 @@ from domain.exceptions.phrasal_verb_errors import (
     PhrasalVerbAlreadyExistsError,
     PhrasalVerbNotFoundError,
 )
+from domain.exceptions.english_expression_errors import EnglishExpressionNotFoundError
 from domain.exceptions.practice_term_errors import (
     PracticeTermAlreadyExistsError,
     PracticeTermNotFoundError,
@@ -45,6 +46,12 @@ from application.routers import (
     exercise_router,
     multiple_prepositions_exercise_router,
     preposition_choice_exercise_router,
+    confusable_word_exercise_router,
+    natural_rewrite_exercise_router,
+    register_switch_exercise_router,
+    english_expression_router,
+    expressions_profile_router,
+    expression_exercise_router,
 )
 from infrastructure.observability.logging.azure_handler import (
     setup_azure_handler,
@@ -191,6 +198,14 @@ async def phrasal_verb_exists_handler(request, exc: PhrasalVerbAlreadyExistsErro
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content={"detail": str(exc)}
+    )
+
+
+@app.exception_handler(EnglishExpressionNotFoundError)
+async def english_expression_not_found_handler(request, exc: EnglishExpressionNotFoundError):
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": str(exc)},
     )
 
 
@@ -342,6 +357,12 @@ app.include_router(prepositions_profile_router.router)
 app.include_router(exercise_router.router)
 app.include_router(multiple_prepositions_exercise_router.router)
 app.include_router(preposition_choice_exercise_router.router)
+app.include_router(confusable_word_exercise_router.router)
+app.include_router(natural_rewrite_exercise_router.router)
+app.include_router(register_switch_exercise_router.router)
+app.include_router(english_expression_router.router)
+app.include_router(expressions_profile_router.router)
+app.include_router(expression_exercise_router.router)
 app.include_router(chat_router.router)
 
 

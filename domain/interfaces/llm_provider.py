@@ -10,6 +10,14 @@ from domain.entities.multiple_prepositions_exercise_model import (
 from domain.entities.preposition_choice_exercise_model import (
     PrepositionChoiceExercisePrompt,
 )
+from domain.entities.natural_rewrite_exercise_model import (
+    NaturalRewriteExercisePrompt,
+    NaturalRewriteEvaluation,
+)
+from domain.entities.register_switch_exercise_model import (
+    RegisterSwitchExercisePrompt,
+    RegisterSwitchEvaluation,
+)
 from domain.entities.phrasal_verb_exercise_model import (
     ExerciseEvaluation as PhrasalVerbExerciseEvaluation,
 )
@@ -96,6 +104,52 @@ class LLMProviderInterface(ABC):
         target_language: str,
     ) -> str:
         """Return short feedback when the learner picked the wrong preposition."""
+        ...
+
+    @abstractmethod
+    async def generate_natural_rewrite(
+        self,
+        native_language: str,
+        target_language: str,
+    ) -> NaturalRewriteExercisePrompt:
+        """Generate a stiff sentence the learner should rewrite naturally."""
+        ...
+
+    @abstractmethod
+    async def evaluate_natural_rewrite(
+        self,
+        scenario_native: str,
+        stiff_sentence: str,
+        user_answer: str,
+        target_language: str,
+    ) -> NaturalRewriteEvaluation:
+        """Evaluate whether the learner's rewrite sounds natural."""
+        ...
+
+    @abstractmethod
+    async def generate_register_switch(
+        self,
+        native_language: str,
+        target_language: str,
+        source_register: str,
+        target_register: str,
+        slang_level: str | None = None,
+    ) -> RegisterSwitchExercisePrompt:
+        """Generate a sentence the learner must rewrite in a different register."""
+        ...
+
+    @abstractmethod
+    async def evaluate_register_switch(
+        self,
+        scenario_native: str,
+        source_sentence: str,
+        source_register: str,
+        target_register: str,
+        slang_level: str | None,
+        user_answer: str,
+        target_language: str,
+    ) -> RegisterSwitchEvaluation:
+        """Evaluate whether the learner matched the target register."""
         ...
 
     @abstractmethod

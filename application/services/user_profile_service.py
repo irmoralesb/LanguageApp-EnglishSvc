@@ -4,6 +4,7 @@ from domain.entities.user_profile_model import (
     UserProfileModel,
     UserPracticeTermSelectionModel,
     UserPhrasalVerbSelectionModel,
+    UserEnglishExpressionSelectionModel,
 )
 from domain.exceptions.user_profile_errors import (
     UserProfileNotFoundError,
@@ -126,3 +127,31 @@ class UserProfileService:
         if existing is None:
             raise UserProfileNotFoundError(user_id)
         return await self.profile_repo.remove_phrasal_verb_selection(user_id, phrasal_verb_id)
+
+    async def get_english_expression_selections(
+        self, user_id: UUID,
+    ) -> list[UserEnglishExpressionSelectionModel]:
+        existing = await self.profile_repo.get_by_user_id(user_id)
+        if existing is None:
+            raise UserProfileNotFoundError(user_id)
+        return await self.profile_repo.get_english_expression_selections(user_id)
+
+    async def add_english_expression_selection(
+        self, user_id: UUID, english_expression_id: UUID,
+    ) -> UserEnglishExpressionSelectionModel:
+        existing = await self.profile_repo.get_by_user_id(user_id)
+        if existing is None:
+            raise UserProfileNotFoundError(user_id)
+        return await self.profile_repo.add_english_expression_selection(
+            user_id, english_expression_id,
+        )
+
+    async def remove_english_expression_selection(
+        self, user_id: UUID, english_expression_id: UUID,
+    ) -> bool:
+        existing = await self.profile_repo.get_by_user_id(user_id)
+        if existing is None:
+            raise UserProfileNotFoundError(user_id)
+        return await self.profile_repo.remove_english_expression_selection(
+            user_id, english_expression_id,
+        )

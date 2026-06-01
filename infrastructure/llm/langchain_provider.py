@@ -21,6 +21,14 @@ from domain.entities.multiple_prepositions_exercise_model import (
 from domain.entities.preposition_choice_exercise_model import (
     PrepositionChoiceExercisePrompt,
 )
+from domain.entities.natural_rewrite_exercise_model import (
+    NaturalRewriteExercisePrompt,
+    NaturalRewriteEvaluation,
+)
+from domain.entities.register_switch_exercise_model import (
+    RegisterSwitchExercisePrompt,
+    RegisterSwitchEvaluation,
+)
 from domain.entities.phrasal_verb_exercise_model import (
     ExerciseEvaluation as PhrasalVerbExerciseEvaluation,
 )
@@ -62,6 +70,18 @@ from infrastructure.llm.prompts.preposition_choice import (
     PREPOSITION_CHOICE_GENERATION_SYSTEM,
     build_preposition_choice_feedback_prompt,
     build_preposition_choice_generation_prompt,
+)
+from infrastructure.llm.prompts.natural_rewrite import (
+    NATURAL_REWRITE_EVALUATION_SYSTEM,
+    NATURAL_REWRITE_GENERATION_SYSTEM,
+    build_natural_rewrite_evaluation_prompt,
+    build_natural_rewrite_generation_prompt,
+)
+from infrastructure.llm.prompts.register_switch import (
+    REGISTER_SWITCH_EVALUATION_SYSTEM,
+    REGISTER_SWITCH_GENERATION_SYSTEM,
+    build_register_switch_evaluation_prompt,
+    build_register_switch_generation_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,6 +127,30 @@ class _PrepositionChoiceOutput(BaseModel):
 
 class _PrepositionChoiceFeedbackOutput(BaseModel):
     feedback: str
+
+
+class _NaturalRewriteGenerationOutput(BaseModel):
+    scenario_native: str
+    stiff_sentence: str
+    context_note: str
+
+
+class _NaturalRewriteEvalOutput(BaseModel):
+    is_correct: bool
+    feedback: str
+    model_answer: str
+
+
+class _RegisterSwitchGenerationOutput(BaseModel):
+    scenario_native: str
+    source_sentence: str
+    source_register: str
+
+
+class _RegisterSwitchEvalOutput(BaseModel):
+    is_correct: bool
+    feedback: str
+    model_answer: str
 
 
 class _CorrectionOutput(BaseModel):
@@ -169,6 +213,10 @@ class LangChainProvider(LLMProviderInterface):
         self._preposition_choice_feedback_chain = llm.with_structured_output(
             _PrepositionChoiceFeedbackOutput
         )
+        self._natural_rewrite_chain = llm.with_structured_output(_NaturalRewriteGenerationOutput)
+        self._natural_rewrite_eval_chain = llm.with_structured_output(_NaturalRewriteEvalOutput)
+        self._register_switch_chain = llm.with_structured_output(_RegisterSwitchGenerationOutput)
+        self._register_switch_eval_chain = llm.with_structured_output(_RegisterSwitchEvalOutput)
         self._phrasal_exercise_chain = llm.with_structured_output(_ExerciseOutput)
         self._phrasal_eval_chain = llm.with_structured_output(_EvaluationOutput)
         self._conversation_llm = llm
@@ -390,6 +438,154 @@ class LangChainProvider(LLMProviderInterface):
         except Exception as exc:
             logger.error(
                 "Preposition choice feedback failed (provider=%s): %s",
+                self._provider,
+                exc,
+                exc_info=True,
+            )
+            raise LLMProviderError(self._provider, str(exc))
+
+    async def generate_natural_rewrite(
+        self,
+        native_language: str,
+        target_language: str,
+    ) -> NaturalRewriteExercisePrompt:
+        user_msg = build_natural_rewrite_generation_prompt(
+            native_language=native_language,
+            target_language=target_language,
+        )
+        messages = [
+            SystemMessage(content=NATURAL_REWRITE_GENERATION_SYSTEM),
+            HumanMessage(content=user_msg),
+        ]
+        try:
+            result: _NaturalRewriteGenerationOutput = await self._natural_rewrite_chain.ainvoke(
+                messages
+            )
+            return NaturalRewriteExercisePrompt(
+                target_language_code=target_language,
+                scenario_native=result.scenario_native,
+                stiff_sentence=result.stiff_sentence,
+                context_note=result.context_note,
+            )
+        except Exception as exc:
+            logger.error(
+                "Natural rewrite generation failed (provider=%s): %s",
+                self._provider,
+                exc,
+                exc_info=True,
+            )
+            raise LLMProviderError(self._provider, str(exc))
+
+    async def evaluate_natural_rewrite(
+        self,
+        scenario_native: str,
+        stiff_sentence: str,
+        user_answer: str,
+        target_language: str,
+    ) -> NaturalRewriteEvaluation:
+        user_msg = build_natural_rewrite_evaluation_prompt(
+            scenario_native=scenario_native,
+            stiff_sentence=stiff_sentence,
+            user_answer=user_answer,
+            target_language=target_language,
+        )
+        messages = [
+            SystemMessage(content=NATURAL_REWRITE_EVALUATION_SYSTEM),
+            HumanMessage(content=user_msg),
+        ]
+        try:
+            result: _NaturalRewriteEvalOutput = await self._natural_rewrite_eval_chain.ainvoke(
+                messages
+            )
+            return NaturalRewriteEvaluation(
+                is_correct=result.is_correct,
+                feedback=result.feedback,
+                model_answer=None if result.is_correct else result.model_answer,
+            )
+        except Exception as exc:
+            logger.error(
+                "Natural rewrite evaluation failed (provider=%s): %s",
+                self._provider,
+                exc,
+                exc_info=True,
+            )
+            raise LLMProviderError(self._provider, str(exc))
+
+    async def generate_register_switch(
+        self,
+        native_language: str,
+        target_language: str,
+        source_register: str,
+        target_register: str,
+        slang_level: str | None = None,
+    ) -> RegisterSwitchExercisePrompt:
+        user_msg = build_register_switch_generation_prompt(
+            native_language=native_language,
+            target_language=target_language,
+            source_register=source_register,
+            target_register=target_register,
+            slang_level=slang_level,
+        )
+        messages = [
+            SystemMessage(content=REGISTER_SWITCH_GENERATION_SYSTEM),
+            HumanMessage(content=user_msg),
+        ]
+        try:
+            result: _RegisterSwitchGenerationOutput = await self._register_switch_chain.ainvoke(
+                messages
+            )
+            return RegisterSwitchExercisePrompt(
+                target_language_code=target_language,
+                scenario_native=result.scenario_native,
+                source_sentence=result.source_sentence,
+                source_register=result.source_register.strip().lower(),
+                target_register=target_register,
+                slang_level=slang_level,
+            )
+        except Exception as exc:
+            logger.error(
+                "Register switch generation failed (provider=%s): %s",
+                self._provider,
+                exc,
+                exc_info=True,
+            )
+            raise LLMProviderError(self._provider, str(exc))
+
+    async def evaluate_register_switch(
+        self,
+        scenario_native: str,
+        source_sentence: str,
+        source_register: str,
+        target_register: str,
+        slang_level: str | None,
+        user_answer: str,
+        target_language: str,
+    ) -> RegisterSwitchEvaluation:
+        user_msg = build_register_switch_evaluation_prompt(
+            scenario_native=scenario_native,
+            source_sentence=source_sentence,
+            source_register=source_register,
+            target_register=target_register,
+            slang_level=slang_level,
+            user_answer=user_answer,
+            target_language=target_language,
+        )
+        messages = [
+            SystemMessage(content=REGISTER_SWITCH_EVALUATION_SYSTEM),
+            HumanMessage(content=user_msg),
+        ]
+        try:
+            result: _RegisterSwitchEvalOutput = await self._register_switch_eval_chain.ainvoke(
+                messages
+            )
+            return RegisterSwitchEvaluation(
+                is_correct=result.is_correct,
+                feedback=result.feedback,
+                model_answer=None if result.is_correct else result.model_answer,
+            )
+        except Exception as exc:
+            logger.error(
+                "Register switch evaluation failed (provider=%s): %s",
                 self._provider,
                 exc,
                 exc_info=True,

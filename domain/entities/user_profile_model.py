@@ -27,3 +27,11 @@ class UserPhrasalVerbSelectionModel:
     user_id: UUID
     phrasal_verb_id: UUID
     added_at: datetime.datetime | None = None
+
+
+@dataclass
+class UserEnglishExpressionSelectionModel:
+    id: UUID | None
+    user_id: UUID
+    english_expression_id: UUID
+    added_at: datetime.datetime | None = None

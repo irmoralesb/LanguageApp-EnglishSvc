@@ -9,6 +9,7 @@ from domain.entities.user_profile_model import (
     UserProfileModel,
     UserPracticeTermSelectionModel,
     UserPhrasalVerbSelectionModel,
+    UserEnglishExpressionSelectionModel,
 )
 from domain.interfaces.user_profile_repository import UserProfileRepositoryInterface
 from infrastructure.databases.models import (
@@ -16,6 +17,7 @@ from infrastructure.databases.models import (
     UserLearningLanguageDataModel,
     UserPracticeTermSelectionDataModel,
     UserPhrasalVerbSelectionDataModel,
+    UserEnglishExpressionSelectionDataModel,
 )
 from infrastructure.observability.logging.decorators import log_database_operation_decorator
 from infrastructure.observability.tracing.decorators import trace_database_operation
@@ -202,6 +204,62 @@ class UserProfileRepository(UserProfileRepositoryInterface):
             delete(UserPhrasalVerbSelectionDataModel).where(
                 UserPhrasalVerbSelectionDataModel.user_id == user_id,
                 UserPhrasalVerbSelectionDataModel.phrasal_verb_id == phrasal_verb_id,
+            )
+        )
+        return result.rowcount > 0
+
+    @log_database_operation_decorator(operation_type='query', entity_type='user_english_expression_selection')
+    @trace_database_operation(operation_type='select', table='user_english_expression_selections')
+    @track_database_operation(operation_type='select', table='user_english_expression_selections')
+    async def get_english_expression_selections(
+        self, user_id: UUID,
+    ) -> list[UserEnglishExpressionSelectionModel]:
+        result = await self.db.execute(
+            select(UserEnglishExpressionSelectionDataModel)
+            .where(UserEnglishExpressionSelectionDataModel.user_id == user_id)
+            .order_by(UserEnglishExpressionSelectionDataModel.added_at.desc())
+        )
+        return [
+            UserEnglishExpressionSelectionModel(
+                id=r.id,
+                user_id=r.user_id,
+                english_expression_id=r.english_expression_id,
+                added_at=r.added_at,
+            )
+            for r in result.scalars().all()
+        ]
+
+    @log_database_operation_decorator(operation_type='create', entity_type='user_english_expression_selection')
+    @trace_database_operation(operation_type='insert', table='user_english_expression_selections')
+    @track_database_operation(operation_type='insert', table='user_english_expression_selections')
+    async def add_english_expression_selection(
+        self, user_id: UUID, english_expression_id: UUID,
+    ) -> UserEnglishExpressionSelectionModel:
+        sel = UserEnglishExpressionSelectionDataModel(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            english_expression_id=english_expression_id,
+        )
+        self.db.add(sel)
+        await self.db.flush()
+        await self.db.refresh(sel)
+        return UserEnglishExpressionSelectionModel(
+            id=sel.id,
+            user_id=sel.user_id,
+            english_expression_id=sel.english_expression_id,
+            added_at=sel.added_at,
+        )
+
+    @log_database_operation_decorator(operation_type='delete', entity_type='user_english_expression_selection')
+    @trace_database_operation(operation_type='delete', table='user_english_expression_selections')
+    @track_database_operation(operation_type='delete', table='user_english_expression_selections')
+    async def remove_english_expression_selection(
+        self, user_id: UUID, english_expression_id: UUID,
+    ) -> bool:
+        result = await self.db.execute(
+            delete(UserEnglishExpressionSelectionDataModel).where(
+                UserEnglishExpressionSelectionDataModel.user_id == user_id,
+                UserEnglishExpressionSelectionDataModel.english_expression_id == english_expression_id,
             )
         )
         return result.rowcount > 0

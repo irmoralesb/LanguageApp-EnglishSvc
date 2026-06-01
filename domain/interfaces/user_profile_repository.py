@@ -5,6 +5,7 @@ from domain.entities.user_profile_model import (
     UserProfileModel,
     UserPracticeTermSelectionModel,
     UserPhrasalVerbSelectionModel,
+    UserEnglishExpressionSelectionModel,
 )
 
 
@@ -56,4 +57,22 @@ class UserProfileRepositoryInterface(ABC):
 
     @abstractmethod
     async def remove_phrasal_verb_selection(self, user_id: UUID, phrasal_verb_id: UUID) -> bool:
+        ...
+
+    @abstractmethod
+    async def get_english_expression_selections(
+        self, user_id: UUID,
+    ) -> list[UserEnglishExpressionSelectionModel]:
+        ...
+
+    @abstractmethod
+    async def add_english_expression_selection(
+        self, user_id: UUID, english_expression_id: UUID,
+    ) -> UserEnglishExpressionSelectionModel:
+        ...
+
+    @abstractmethod
+    async def remove_english_expression_selection(
+        self, user_id: UUID, english_expression_id: UUID,
+    ) -> bool:
         ...
