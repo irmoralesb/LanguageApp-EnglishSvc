@@ -44,6 +44,7 @@ from application.routers import (
     user_profile_router,
     exercise_router,
     multiple_prepositions_exercise_router,
+    preposition_choice_exercise_router,
 )
 from infrastructure.observability.logging.azure_handler import (
     setup_azure_handler,
@@ -340,6 +341,7 @@ app.include_router(user_profile_router.router)
 app.include_router(prepositions_profile_router.router)
 app.include_router(exercise_router.router)
 app.include_router(multiple_prepositions_exercise_router.router)
+app.include_router(preposition_choice_exercise_router.router)
 app.include_router(chat_router.router)
 
 

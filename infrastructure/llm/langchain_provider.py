@@ -18,6 +18,9 @@ from domain.entities.multiple_prepositions_exercise_model import (
     MultiplePrepositionsEvaluation,
     MultiplePrepositionsExercisePrompt,
 )
+from domain.entities.preposition_choice_exercise_model import (
+    PrepositionChoiceExercisePrompt,
+)
 from domain.entities.phrasal_verb_exercise_model import (
     ExerciseEvaluation as PhrasalVerbExerciseEvaluation,
 )
@@ -54,6 +57,12 @@ from infrastructure.llm.prompts import (
     build_multiple_prepositions_evaluation_prompt,
     build_multiple_prepositions_generation_prompt,
 )
+from infrastructure.llm.prompts.preposition_choice import (
+    PREPOSITION_CHOICE_FEEDBACK_SYSTEM,
+    PREPOSITION_CHOICE_GENERATION_SYSTEM,
+    build_preposition_choice_feedback_prompt,
+    build_preposition_choice_generation_prompt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +96,17 @@ class _MultiplePrepositionsEvalOutput(BaseModel):
     feedback: str
     preposition_feedback: List[_PrepositionFeedbackItem] = Field(default_factory=list)
     minor_issues: List[str] = Field(default_factory=list)
+
+
+class _PrepositionChoiceOutput(BaseModel):
+    scenario_native: str = ""
+    sentence_with_blank: str
+    correct_preposition: str
+    sentence_complete: str
+
+
+class _PrepositionChoiceFeedbackOutput(BaseModel):
+    feedback: str
 
 
 class _CorrectionOutput(BaseModel):
@@ -144,6 +164,10 @@ class LangChainProvider(LLMProviderInterface):
         self._multi_prep_chain = llm.with_structured_output(_MultiplePrepositionsOutput)
         self._multi_prep_eval_chain = llm.with_structured_output(
             _MultiplePrepositionsEvalOutput
+        )
+        self._preposition_choice_chain = llm.with_structured_output(_PrepositionChoiceOutput)
+        self._preposition_choice_feedback_chain = llm.with_structured_output(
+            _PrepositionChoiceFeedbackOutput
         )
         self._phrasal_exercise_chain = llm.with_structured_output(_ExerciseOutput)
         self._phrasal_eval_chain = llm.with_structured_output(_EvaluationOutput)
@@ -292,6 +316,80 @@ class LangChainProvider(LLMProviderInterface):
         except Exception as exc:
             logger.error(
                 "Multiple-prepositions evaluation failed (provider=%s): %s",
+                self._provider,
+                exc,
+                exc_info=True,
+            )
+            raise LLMProviderError(self._provider, str(exc))
+
+    async def generate_preposition_choice_exercise(
+        self,
+        option_a: str,
+        option_b: str,
+        native_language: str,
+        target_language: str,
+    ) -> PrepositionChoiceExercisePrompt:
+        user_msg = build_preposition_choice_generation_prompt(
+            option_a=option_a,
+            option_b=option_b,
+            native_language=native_language,
+            target_language=target_language,
+        )
+        messages = [
+            SystemMessage(content=PREPOSITION_CHOICE_GENERATION_SYSTEM),
+            HumanMessage(content=user_msg),
+        ]
+        try:
+            result: _PrepositionChoiceOutput = await self._preposition_choice_chain.ainvoke(
+                messages
+            )
+            return PrepositionChoiceExercisePrompt(
+                option_a=option_a,
+                option_b=option_b,
+                target_language_code=target_language,
+                scenario_native=result.scenario_native,
+                sentence_with_blank=result.sentence_with_blank,
+                correct_preposition=result.correct_preposition.strip().lower(),
+                sentence_complete=result.sentence_complete,
+            )
+        except Exception as exc:
+            logger.error(
+                "Preposition choice exercise generation failed (provider=%s): %s",
+                self._provider,
+                exc,
+                exc_info=True,
+            )
+            raise LLMProviderError(self._provider, str(exc))
+
+    async def explain_preposition_choice_mistake(
+        self,
+        option_a: str,
+        option_b: str,
+        sentence_with_blank: str,
+        user_answer: str,
+        correct_preposition: str,
+        target_language: str,
+    ) -> str:
+        user_msg = build_preposition_choice_feedback_prompt(
+            option_a=option_a,
+            option_b=option_b,
+            sentence_with_blank=sentence_with_blank,
+            user_answer=user_answer,
+            correct_preposition=correct_preposition,
+            target_language=target_language,
+        )
+        messages = [
+            SystemMessage(content=PREPOSITION_CHOICE_FEEDBACK_SYSTEM),
+            HumanMessage(content=user_msg),
+        ]
+        try:
+            result: _PrepositionChoiceFeedbackOutput = (
+                await self._preposition_choice_feedback_chain.ainvoke(messages)
+            )
+            return result.feedback
+        except Exception as exc:
+            logger.error(
+                "Preposition choice feedback failed (provider=%s): %s",
                 self._provider,
                 exc,
                 exc_info=True,

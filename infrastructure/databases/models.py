@@ -261,6 +261,30 @@ class MultiplePrepositionsExerciseResultTermDataModel(Base):
     practice_term = relationship("PracticeTermDataModel", lazy="joined")
 
 
+class PrepositionChoiceExerciseResultDataModel(Base):
+    __tablename__ = "preposition_choice_exercise_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), default=uuid.uuid4, primary_key=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UNIQUEIDENTIFIER(as_uuid=True), nullable=False, index=True
+    )
+    option_a: Mapped[str] = mapped_column(String(50), nullable=False)
+    option_b: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_language_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    scenario_native: Mapped[str] = mapped_column(Text, nullable=False)
+    sentence_with_blank: Mapped[str] = mapped_column(Text, nullable=False)
+    sentence_complete: Mapped[str] = mapped_column(Text, nullable=False)
+    correct_preposition: Mapped[str] = mapped_column(String(50), nullable=False)
+    user_answer: Mapped[str] = mapped_column(Text, nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    feedback: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DATETIME2(precision=6), server_default=func.sysutcdatetime(), nullable=False
+    )
+
+
 class ChatSessionDataModel(Base):
     __tablename__ = "chat_sessions"
 

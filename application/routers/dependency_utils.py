@@ -10,6 +10,9 @@ from application.services.exercise_service import ExerciseService
 from application.services.multiple_prepositions_exercise_service import (
     MultiplePrepositionsExerciseService,
 )
+from application.services.preposition_choice_exercise_service import (
+    PrepositionChoiceExerciseService,
+)
 from application.services.phrasal_verb_catalog_service import PhrasalVerbCatalogService
 from application.services.phrasal_verb_exercise_service import PhrasalVerbExerciseService
 from application.services.practice_term_catalog_service import PracticeTermCatalogService
@@ -33,6 +36,9 @@ from infrastructure.repositories.exercise_repository import ExerciseRepository
 from infrastructure.repositories.language_repository import LanguageRepository
 from infrastructure.repositories.multiple_prepositions_exercise_repository import (
     MultiplePrepositionsExerciseRepository,
+)
+from infrastructure.repositories.preposition_choice_exercise_repository import (
+    PrepositionChoiceExerciseRepository,
 )
 from infrastructure.repositories.phrasal_verb_exercise_repository import (
     PhrasalVerbExerciseRepository,
@@ -67,6 +73,12 @@ def get_multiple_prepositions_exercise_repository(
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> MultiplePrepositionsExerciseRepository:
     return MultiplePrepositionsExerciseRepository(db)
+
+
+def get_preposition_choice_exercise_repository(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> PrepositionChoiceExerciseRepository:
+    return PrepositionChoiceExerciseRepository(db)
 
 
 def get_phrasal_verb_repository(db: Annotated[AsyncSession, Depends(get_db_session)]) -> PhrasalVerbRepository:
@@ -137,6 +149,22 @@ def get_multiple_prepositions_exercise_service(
     prompt_token_svc: Annotated[PromptTokenService, Depends(get_prompt_token_service)],
 ) -> MultiplePrepositionsExerciseService:
     return MultiplePrepositionsExerciseService(
+        exercise_repo, term_repo, profile_repo, language_repo, llm, prompt_token_svc,
+    )
+
+
+def get_preposition_choice_exercise_service(
+    exercise_repo: Annotated[
+        PrepositionChoiceExerciseRepository,
+        Depends(get_preposition_choice_exercise_repository),
+    ],
+    term_repo: Annotated[PracticeTermRepository, Depends(get_practice_term_repository)],
+    profile_repo: Annotated[UserProfileRepository, Depends(get_user_profile_repository)],
+    language_repo: Annotated[LanguageRepository, Depends(get_language_repository)],
+    llm: Annotated[LLMProviderInterface, Depends(get_llm_provider)],
+    prompt_token_svc: Annotated[PromptTokenService, Depends(get_prompt_token_service)],
+) -> PrepositionChoiceExerciseService:
+    return PrepositionChoiceExerciseService(
         exercise_repo, term_repo, profile_repo, language_repo, llm, prompt_token_svc,
     )
 
@@ -228,6 +256,10 @@ ExerciseSvcDep = Annotated[ExerciseService, Depends(get_exercise_service)]
 MultiplePrepositionsExerciseSvcDep = Annotated[
     MultiplePrepositionsExerciseService,
     Depends(get_multiple_prepositions_exercise_service),
+]
+PrepositionChoiceExerciseSvcDep = Annotated[
+    PrepositionChoiceExerciseService,
+    Depends(get_preposition_choice_exercise_service),
 ]
 PhrasalVerbSvcDep = Annotated[PhrasalVerbCatalogService, Depends(get_phrasal_verb_catalog_service)]
 PhrasalVerbExerciseSvcDep = Annotated[

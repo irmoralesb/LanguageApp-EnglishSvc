@@ -7,6 +7,9 @@ from domain.entities.multiple_prepositions_exercise_model import (
     MultiplePrepositionsExercisePrompt,
     MultiplePrepositionsEvaluation,
 )
+from domain.entities.preposition_choice_exercise_model import (
+    PrepositionChoiceExercisePrompt,
+)
 from domain.entities.phrasal_verb_exercise_model import (
     ExerciseEvaluation as PhrasalVerbExerciseEvaluation,
 )
@@ -69,6 +72,30 @@ class LLMProviderInterface(ABC):
         application service controls whether to reveal `correct_sentence_target` to
         the client based on attempt_number.
         """
+        ...
+
+    @abstractmethod
+    async def generate_preposition_choice_exercise(
+        self,
+        option_a: str,
+        option_b: str,
+        native_language: str,
+        target_language: str,
+    ) -> PrepositionChoiceExercisePrompt:
+        """Generate a fill-in-the-blank sentence choosing between two similar prepositions."""
+        ...
+
+    @abstractmethod
+    async def explain_preposition_choice_mistake(
+        self,
+        option_a: str,
+        option_b: str,
+        sentence_with_blank: str,
+        user_answer: str,
+        correct_preposition: str,
+        target_language: str,
+    ) -> str:
+        """Return short feedback when the learner picked the wrong preposition."""
         ...
 
     @abstractmethod
